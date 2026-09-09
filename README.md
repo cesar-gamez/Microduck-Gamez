@@ -19,6 +19,12 @@ actuator physics, domain randomization, backlash simulation, and the
 reward-design lessons that made it work
 (see [AGENTS.md](AGENTS.md) for the distilled playbook).
 
+This repository follows the official
+[pollen-robotics/microduck_rl](https://github.com/pollen-robotics/microduck_rl)
+training stack and adds a Git LFS-backed [`policies/`](policies/) area for
+versioning deployable ONNX policies and their manifests. Training checkpoints,
+W&B runs, and logs remain local.
+
 ## Quickstart
 
 Requires a CUDA GPU (training runs through MuJoCo Warp) and [uv](https://docs.astral.sh/uv/).
@@ -28,8 +34,10 @@ Requires a CUDA GPU (training runs through MuJoCo Warp) and [uv](https://docs.as
 > Export `UV_HTTP_TIMEOUT=600` for the first sync. 
 
 ```bash
-git clone https://github.com/pollen-robotics/microduck_rl
-cd microduck_rl
+git clone https://github.com/cesar-gamez/Microduck-Gamez
+cd Microduck-Gamez
+git lfs install
+uv sync
 
 # train the walking policy (uses your GPU; ~1-2 h for a usable gait at 4096 envs)
 uv run train Mjlab-Velocity-Flat-MicroDuck --env.scene.num-envs 4096
@@ -38,11 +46,13 @@ uv run train Mjlab-Velocity-Flat-MicroDuck --env.scene.num-envs 4096
 uv run play Mjlab-Velocity-Flat-MicroDuck --wandb-run-path <entity/project/run_id>
 
 # export to ONNX for deployment
-uv run scripts/export.py Mjlab-Velocity-Flat-MicroDuck --wandb-run-path <...>
-uv run publish --onnx output.onnx --repo <user>/microduck-<name> --kind episodic --duration-s 4.0   # share it (see "Publishing a policy")
+uv run scripts/export.py Mjlab-Velocity-Flat-MicroDuck --wandb-run-path <...> \
+    --onnx-file policies/walk/policy.onnx
+uv run publish --onnx policies/walk/policy.onnx \
+    --repo <user>/microduck-my-walk --kind perpetual --slot walk
 
 # drive the exported policy in CPU MuJoCo with the keyboard
-uv run scripts/infer_policy.py --walking output.onnx
+uv run scripts/infer_policy.py --walking policies/walk/policy.onnx
 ```
 
 Resume from a checkpoint:
